@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Universal Brain — IOCL IT Support Classifier</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #f97316;
+      --accent-dim: rgba(249, 115, 22, 0.12);
+      --accent-glow: rgba(249, 115, 22, 0.35);
+      --green: #22c55e;
+      --green-dim: rgba(34, 197, 94, 0.1);
+      --yellow: #eab308;
+      --yellow-dim: rgba(234, 179, 8, 0.1);
+      --red: #ef4444;
+      --red-dim: rgba(239, 68, 68, 0.1);
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(249,115,22,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(249,115,22,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glow orb */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      padding: 60px 0 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(249,115,22,0.25);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 2px;
+      margin-bottom: 24px;
+    }
+
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-dim);
+      line-height: 1.7;
+      max-width: 560px;
+      font-weight: 300;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 24px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .meta-item strong {
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin: 40px 0;
+    }
+
+    .stat {
+      background: var(--surface);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* Main classifier */
+    .classifier {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+
+    .classifier-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .classifier-header span {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+
+    .classifier-body { padding: 24px; }
+
+    label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 14px 16px;
+      resize: vertical;
+      min-height: 100px;
+      outline: none;
+      transition: border-color 0.2s;
+      border-radius: 0;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--text-muted); }
+
+    /* Example chips */
+    .examples-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 14px 0 8px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .chip {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-radius: 0;
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn:hover { background: #ea6a0a; }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn:disabled {
+      background: var(--border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result */
+    .result {
+      margin-top: 20px;
+      border: 1px solid var(--border);
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result.visible { display: block; }
+
+    .result-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .result-header span {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .action-badge {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      letter-spacing: 0.06em;
+    }
+
+    .action-badge.automated {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+
+    .action-badge.manual {
+      background: var(--yellow-dim);
+      color: var(--yellow);
+      border: 1px solid rgba(234,179,8,0.25);
+    }
+
+    .action-badge.error {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+
+    .result-body { padding: 20px; }
+
+    .result-solution {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 20px;
+      padding-left: 12px;
+      border-left: 2px solid var(--accent);
+    }
+
+    .scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .score-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+    }
+
+    .score-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .score-value {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .score-value.high { color: var(--green); }
+    .score-value.mid { color: var(--yellow); }
+    .score-value.low { color: var(--red); }
+
+    .confidence-bar {
+      margin-top: 8px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 0;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      transition: width 0.6s ease;
+    }
+
+    .confidence-fill.high { background: var(--green); }
+    .confidence-fill.mid { background: var(--yellow); }
+    .confidence-fill.low { background: var(--red); }
+
+    /* Error state */
+    .error-msg {
+      padding: 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--red);
+      line-height: 1.6;
+    }
+
+    /* How it works */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .flow-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .flow-step-icon {
+      font-size: 18px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .flow-step-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: block;
+    }
+
+    .flow-arrow {
+      color: var(--accent);
+      font-size: 16px;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      margin-top: 20px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-text {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .footer-text a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-text a:hover { text-decoration: underline; }
+
+    @media (max-width: 500px) {
+      .stats-bar { grid-template-columns: 1fr; }
+      .scores { grid-template-columns: 1fr; }
+      h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="badge">Live Demo &nbsp;·&nbsp; IOCL Internship Project</div>
+    <h1>Universal <span>Brain</span><br>IT Support Classifier</h1>
+    <p class="subtitle">
+      A TF-IDF based NLP classifier that matches incoming IT support tickets to known solutions
+      and returns a calibrated confidence score. Runs serverlessly on AWS Lambda.
+    </p>
+    <div class="meta-row">
+      <div class="meta-item">Model: <strong>TF-IDF + Cosine Similarity</strong></div>
+      <div class="meta-item">Infra: <strong>AWS Lambda + S3</strong></div>
+      <div class="meta-item">Training: <strong>1,500 tickets</strong></div>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-value">100%</span>
+      <span class="stat-label">Automation Coverage</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">0%</span>
+      <span class="stat-label">False Positives</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">&lt;1s</span>
+      <span class="stat-label">Warm Latency</span>
+    </div>
+  </div>
+
+  <!-- Classifier UI -->
+  <div class="classifier">
+    <div class="classifier-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span style="margin-left:8px;">classifier.py — live inference</span>
+    </div>
+    <div class="classifier-body">
+      <label for="ticket-input">Describe the IT issue</label>
+      <textarea
+        id="ticket-input"
+        placeholder="e.g. My laptop won't connect to the office VPN after the password reset..."
+        rows="4"
+      ></textarea>
+
+      <div class="examples-label">Try an example</div>
+      <div class="chips">
+        <button class="chip" onclick="fillExample(this)">VPN not connecting after password reset</button>
+        <button class="chip" onclick="fillExample(this)">SAP ERP showing error code 0x8004 after software update</button>
+        <button class="chip" onclick="fillExample(this)">Printer offline on the 3rd floor network</button>
+        <button class="chip" onclick="fillExample(this)">Email not syncing on mobile device</button>
+        <button class="chip" onclick="fillExample(this)">SAPP ERP showin errror aftr softwere updte</button>
+      </div>
+
+      <button class="submit-btn" id="submit-btn" onclick="classify()">
+        Run Classifier
+      </button>
+
+      <div class="result" id="result">
+        <div class="result-header">
+          <span>Output</span>
+          <span class="action-badge" id="action-badge"></span>
+        </div>
+        <div class="result-body" id="result-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="section">
+    <div class="section-title">How it works</div>
+    <div class="flow">
+      <div class="flow-step">
+        <span class="flow-step-icon">📝</span>
+        <span class="flow-step-label">Ticket Input</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="flow-step-icon">🔤</span>
+        <span class="flow-step-label">TF-IDF Vectorize</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="flow-step-icon">📐</span>
+        <span class="flow-step-label">Cosine Similarity</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="flow-step-icon">🎚️</span>
+        <span class="flow-step-label">Calibration</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="flow-step-icon">✅</span>
+        <span class="flow-step-label">Decision</span>
+      </div>
+    </div>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:16px; line-height:1.7;">
+      Tickets with confidence ≥ 0.45 are marked <strong style="color:var(--green)">AUTOMATED</strong> — the system resolves them directly.
+      Below that threshold, they go to <strong style="color:var(--yellow)">MANUAL REVIEW</strong>.
+      A noise gate at 0.25 raw similarity prevents garbage matches from surfacing at all.
+      High-confidence critical tickets fire an SNS alert to the infrastructure team.
+    </p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-text">
+        Built by <a href="https://github.com/suddhasheel333">Suddhasheel Datta</a>
+        &nbsp;·&nbsp; IOCL Systems Analytics Internship, 2026
+      </div>
+      <div class="footer-text">
+        Deployed on <strong style="color:var(--text-dim)">AWS Lambda</strong> + S3
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const LAMBDA_URL = "https://7ieqgy32hxxsn2csg2mx7uyifi0yjscu.lambda-url.us-east-1.on.aws/";
+
+  function fillExample(el) {
+    document.getElementById('ticket-input').value = el.textContent.trim();
+  }
+
+  async function classify() {
+    const ticket = document.getElementById('ticket-input').value.trim();
+    if (!ticket) {
+      document.getElementById('ticket-input').focus();
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    const resultEl = document.getElementById('result');
+    const resultBody = document.getElementById('result-body');
+    const actionBadge = document.getElementById('action-badge');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Classifying...';
+    resultEl.classList.remove('visible');
+
+    try {
+      const response = await fetch(LAMBDA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket })
+      });
+
+      const data = await response.json();
+
+      if (data.error) throw new Error(data.error);
+
+      const conf = data.confidence;
+      const isAutomated = data.action === 'AUTOMATED';
+      const confPct = Math.round(conf * 100);
+      const rawPct = Math.round(data.raw_score * 100);
+
+      let confClass = conf >= 0.7 ? 'high' : conf >= 0.45 ? 'mid' : 'low';
+
+      actionBadge.textContent = isAutomated ? '✓ AUTOMATED' : '⚠ MANUAL REVIEW';
+      actionBadge.className = 'action-badge ' + (isAutomated ? 'automated' : 'manual');
+
+      resultBody.innerHTML = `
+        <div class="result-solution">${data.matched_solution}</div>
+        <div class="scores">
+          <div class="score-block">
+            <span class="score-label">Confidence Score</span>
+            <span class="score-value ${confClass}">${confPct}%</span>
+            <div class="confidence-bar">
+              <div class="confidence-fill ${confClass}" style="width: ${confPct}%"></div>
+            </div>
+          </div>
+          <div class="score-block">
+            <span class="score-label">Raw Similarity</span>
+            <span class="score-value ${confClass}">${rawPct}%</span>
+            <div class="confidence-bar">
+              <div class="confidence-fill ${confClass}" style="width: ${rawPct}%"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      resultEl.classList.add('visible');
+
+    } catch (err) {
+      actionBadge.textContent = 'ERROR';
+      actionBadge.className = 'action-badge error';
+      resultBody.innerHTML = `<div class="error-msg">// ${err.message || 'Something went wrong. Check your connection.'}</div>`;
+      resultEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Run Classifier';
+    }
+  }
+
+  // Allow Enter key in textarea with Ctrl/Cmd
+  document.getElementById('ticket-input').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') classify();
+  });
+</script>
+
+</body>
+</html>
